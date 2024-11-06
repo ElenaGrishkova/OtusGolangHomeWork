@@ -13,47 +13,76 @@ func Unpack(input string) (string, error) {
 
 	inputRunes := []rune(input)
 	var prevSymb string
+	var isPrevDigitNotEscaped bool
+	var isPrevEscaped bool
 	for pos, run := range inputRunes {
+		// Текущая итерация
 		currentSymb := string(run)
+		// Строка, которая в этой итерации будет добавлена к общему результату
+		// (возможно пустая, возможно задублированный или одиночный символ)
 		var addingStr string
+		// Символ, из которого будет состоять addingStr повторенный или одиночный
+		// (как правило это символ предыдущей итерации, так как информацию про него мы поняли только сейчас)
+		toRepeat := prevSymb
+
+		// количество повторений в случае если текущий символ будет неэкранированной цифрой (далее в switch case)
 		repeatCount, errCheckDigit := strconv.Atoi(currentSymb)
-		_, errCheckPrevDigit := strconv.Atoi(prevSymb)
+		// Является ли текущий символ цифрой
+		isDigit := errCheckDigit == nil
+
+		// Является ли текущий символ (цифра или слеш) экранированным.
+		// Если предыдущий символ - уже являлся экранированным слешем, то на текущий символ не влияет, отчет ведется снова
+		isEscaped := prevSymb == `\` && !isPrevEscaped
+		// Является ли текущая цифра триггером к повторению предыдущего символа (является ли цифра неэкранированной)
+		isDigitForPrevRepeat := isDigit && !isEscaped
 
 		switch {
-		case errCheckDigit == nil:
-			// Текущий символ - цифра. Проверим что он не первый символ и не вторая цифра
-			err2 := checkDigit(pos, prevSymb)
+		case isDigitForPrevRepeat:
+			// Текущий символ - неэкранированная цифра обозначающая количество повторений.
+			// Проверим что он не первый символ и не вторая цифра
+			err2 := checkDigit(pos, isPrevDigitNotEscaped)
 			if err2 != nil {
 				return "", err2
 			}
-		case errCheckPrevDigit == nil:
-			// Если предыдущий символ - цифра, не записываем его в addingStr вообще
+		case prevSymb == `\` && !isDigit && currentSymb != `\`:
+			// Ошибка - экранировать можно только цифры и слэш
+			return "", ErrInvalidString
+		case isPrevDigitNotEscaped || isEscaped:
+			// Если предыдущий символ - цифра или слэш, не записываем этот предыдущий символ в addingStr вообще, повторяем 0 раз
 			repeatCount = 0
 		default:
-			// Текущий символ - не цифра, поэтому берем предыдущий символ 1 раз. Текущий символ обработаем в следующей итерации
+			// Текущий символ - не неэкранированная цифра, поэтому предыдущий символ не повторяем.
+			// Текущий символ обработаем в следующей итерации
 			repeatCount = 1
 		}
 		// Нужно повторить предыдущий символ repeatCount раз
-		addingStr = strings.Repeat(prevSymb, repeatCount)
+		addingStr = strings.Repeat(toRepeat, repeatCount)
 
 		result.WriteString(addingStr)
-		prevSymb = currentSymb
 
-		// Если конец цикла, то отдельным образом обработаем последний символ, если он не цифра
-		if pos == len(inputRunes)-1 && errCheckDigit != nil {
+		// Если конец цикла, то отдельным образом приклеим последний символ, если он не неэкранироанная цифра
+		if pos == len(inputRunes)-1 && !isDigitForPrevRepeat {
 			result.WriteString(currentSymb)
+		}
+
+		// Переопределяем переменные для следующей итерации цикла
+		prevSymb = currentSymb
+		isPrevEscaped = isEscaped
+		if isDigitForPrevRepeat {
+			isPrevDigitNotEscaped = true
+		} else {
+			isPrevDigitNotEscaped = false
 		}
 	}
 	return result.String(), nil
 }
 
-func checkDigit(pos int, prevSymb string) error {
+func checkDigit(pos int, isPrevDigit bool) error {
 	if pos == 0 {
 		// Строка не может начинаться с числа
 		return ErrInvalidString
 	}
-	_, err := strconv.Atoi(prevSymb)
-	if err == nil {
+	if isPrevDigit {
 		// Две цифры подряд запрещены
 		return ErrInvalidString
 	}
