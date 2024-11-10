@@ -3,6 +3,7 @@ package hw03frequencyanalysis
 import (
 	"testing"
 
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,6 +44,8 @@ var text = `Как видите, он  спускается  по  лестни�
 	посидеть у огня и послушать какую-нибудь интересную сказку.
 		В этот вечер...`
 
+var customText = "Aa   aa - bb bB- .bb,. 	bb --- -."
+
 func TestTop10(t *testing.T) {
 	t.Run("no words in empty string", func(t *testing.T) {
 		require.Len(t, Top10(""), 0)
@@ -78,5 +81,36 @@ func TestTop10(t *testing.T) {
 			}
 			require.Equal(t, expected, Top10(text))
 		}
+	})
+
+	t.Run("custom test", func(t *testing.T) {
+		// if taskWithAsteriskIsCompleted {
+		//	expected := []string{
+		//		"а",         // 8
+		//		"он",        // 8
+		//		"и",         // 6
+		//		"ты",        // 5
+		//		"что",       // 5
+		//		"в",         // 4
+		//		"его",       // 4
+		//		"если",      // 4
+		//		"кристофер", // 4
+		//		"не",        // 4
+		//	}
+		//	require.Equal(t, expected, Top10(customText))
+		// } else {
+		expected := []string{
+			"bb",    // 2
+			"-",     // 1
+			"---",   // 1
+			"-.",    // 1
+			".bb,.", // 1
+			"Aa",    // 1
+			"aa",    // 1
+			"bB-",   // 1
+
+		}
+		require.Equal(t, expected, Top10(customText))
+		//}
 	})
 }
