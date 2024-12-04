@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// Знаки препинания, которые следует игнорировать по краям слова.
+const punctSymbols = ".,-?!;:()\"'`"
+
 func Top10(input string) []string {
 	if input == "" {
 		return []string{}
@@ -16,7 +19,10 @@ func Top10(input string) []string {
 
 	// Вычислим количество повторяющихся слов
 	for _, word := range inputSlice {
-		index[word]++
+		pureLexeme := getPureLexeme(word)
+		if key, needIndex := getIndexWord(pureLexeme, word); needIndex {
+			index[key]++
+		}
 	}
 	fmt.Println("Index=", index)
 
@@ -37,4 +43,27 @@ func Top10(input string) []string {
 	// Возвращаем первые топ 10 ключей (или меньше)
 	keySlice = keySlice[:min(10, len(keySlice))]
 	return keySlice
+}
+
+// Преобразовывает изначальное слово - в чистое, пригодное для подсчета.
+// Убирает знаки препинания по краям и преобразовывает в нижний регистр.
+func getPureLexeme(rawWord string) string {
+	pureLexeme := strings.Trim(rawWord, punctSymbols)
+	pureLexeme = strings.ToLower(pureLexeme)
+	return pureLexeme
+}
+
+// Если после сжатия wordForIndex - пустая строка, значит там были только знаки препинания.
+// Рассмотрим особые случаи для таких слов.
+func getIndexWord(pureLexeme string, rawWord string) (string, bool) {
+	if pureLexeme != "" {
+		return pureLexeme, true
+	}
+
+	if rawWord == "-" {
+		// Особый случай: "-" словом не является
+		return "", false
+	}
+	// Остальные случаи - являются словом, пока не поступит отдельного ТЗ.
+	return rawWord, true
 }
