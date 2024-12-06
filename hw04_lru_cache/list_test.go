@@ -3,6 +3,7 @@ package hw04lrucache
 import (
 	"testing"
 
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 )
 
@@ -101,13 +102,17 @@ func TestList(t *testing.T) {
 	})
 }
 
-func checkValuesOfSize3(t *testing.T, frontItem *ListItem, middleItem *ListItem, backItem *ListItem, expected1 interface{}, expected2 interface{}, expected3 interface{}) {
+func checkValuesOfSize3(t *testing.T, frontItem *ListItem, middleItem *ListItem, backItem *ListItem,
+	//nolint:gofumpt
+	expected1 interface{}, expected2 interface{}, expected3 interface{}) {
+	t.Helper()
 	require.Equal(t, expected1, frontItem.Value)
 	require.Equal(t, expected2, middleItem.Value)
 	require.Equal(t, expected3, backItem.Value)
 }
 
 func checkLinks(t *testing.T, middleItem *ListItem, frontItem *ListItem, backItem *ListItem) {
+	t.Helper()
 	require.Equal(t, middleItem, frontItem.Next)
 	require.Nil(t, frontItem.Prev)
 	require.Equal(t, backItem, middleItem.Next)

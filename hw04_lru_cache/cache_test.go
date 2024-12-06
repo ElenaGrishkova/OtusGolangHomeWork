@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,13 +51,33 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		// на логику выталкивания элементов из-за размера очереди
+		// (например: n = 3, добавили 4 элемента - 1й из кэша вытолкнулся);
+		c := NewCache(3)
+
+		c.Set("aaa", 100)
+		c.Set("bbb", 200)
+		c.Set("ccc", 300)
+		c.Set("ddd", 400)
+
+		_, ok := c.Get("aaa")
+		require.False(t, ok)
+
+		// на логику выталкивания давно используемых элементов (например: n = 3, добавили 3 элемента,
+		// обратились несколько раз к разным элементам: изменили значение, получили значение и пр. -
+		// добавили 4й элемент, из первой тройки вытолкнется тот элемент, что был затронут наиболее давно).
+		c.Get("bbb")
+		c.Get("ddd")
+		c.Set("aaa", 100)
+		c.Set("ddd", 500)
+		c.Get("aaa")
+
+		_, ok = c.Get("ccc")
+		require.False(t, ok)
 	})
 }
 
-func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Remove me if task with asterisk completed.
-
+func TestCacheMultithreading(_ *testing.T) {
 	c := NewCache(10)
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
