@@ -24,6 +24,7 @@ func (l *lruCache) Set(key Key, value interface{}) bool {
 	if oldItem, ok := l.items[key]; ok {
 		// если элемент присутствует в словаре, то обновить его значение и переместить элемент в начало очереди
 		oldItem.Value = value
+		l.queue.MoveToFront(oldItem)
 		return true
 	}
 
