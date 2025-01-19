@@ -82,7 +82,7 @@ func (l *list) Remove(i *ListItem) {
 
 func (l *list) MoveToFront(i *ListItem) {
 	switch {
-	case l.frontItem == i || l.length == 1:
+	case l.frontItem == i:
 		return
 	case l.backItem == i:
 		l.backItem = l.backItem.Prev
