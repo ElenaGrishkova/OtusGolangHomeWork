@@ -88,9 +88,21 @@ func (l *list) MoveToFront(i *ListItem) {
 		l.backItem = l.backItem.Prev
 		l.backItem.Next = nil
 	}
+	// Предыдущий "первый элемент".
 	oldFrontItem := l.Front()
+	// Предыдущий "первый элемент" становится вторым. Обновим его ссылку на Prev.
 	oldFrontItem.Prev = i
+
+	// Общая характеристика списка "Первый элемент" обновляется.
 	l.frontItem = i
+
+	//Старые элементы, которые были раньше связаны с i теперь должны смотреть друг на друга.
+	i.Prev.Next = i.Next
+	if i.Next != nil {
+		i.Next.Prev = i.Prev
+	}
+
+	// У нового первого элемента обновлены ссылки.
 	i.Next = oldFrontItem
 	i.Prev = nil
 }
