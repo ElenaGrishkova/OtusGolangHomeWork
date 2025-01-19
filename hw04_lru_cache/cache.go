@@ -31,7 +31,7 @@ func (l *lruCache) Set(key Key, value interface{}) bool {
 
 	// Сперва: если размер очереди больше ёмкости кэша, то необходимо удалить последний элемент из очереди
 	// и его значение из словаря
-	if l.capacity < l.queue.Len() {
+	if l.capacity == l.queue.Len() {
 		backItem := l.queue.Back()
 		l.queue.Remove(backItem)
 
