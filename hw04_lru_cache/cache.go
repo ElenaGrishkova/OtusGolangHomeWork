@@ -27,11 +27,11 @@ func (l *lruCache) Set(key Key, value interface{}) bool {
 		return true
 	}
 
-	// если элемента нет в словаре, то добавить в словарь и в начало очереди
-	l.items[key] = l.queue.PushFront(value)
+	// если элемента нет в словаре, то добавить в словарь и в начало очереди. Делаем в два этапа:
+
+	// Сперва: если размер очереди больше ёмкости кэша, то необходимо удалить последний элемент из очереди
+	// и его значение из словаря
 	if l.capacity < l.queue.Len() {
-		// если размер очереди больше ёмкости кэша, то необходимо удалить последний элемент из очереди
-		// и его значение из словаря
 		backItem := l.queue.Back()
 		l.queue.Remove(backItem)
 
@@ -41,6 +41,9 @@ func (l *lruCache) Set(key Key, value interface{}) bool {
 			}
 		}
 	}
+	// Затем: собственно добавление в словарь и в начало очереди.
+	l.items[key] = l.queue.PushFront(value)
+
 	return false
 }
 
