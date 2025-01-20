@@ -17,13 +17,18 @@ type lruCache struct {
 	items map[Key]*ListItem
 }
 
+type CacheItem struct {
+	cacheValue interface{}
+	key        Key
+}
+
 // возвращаемое значение - флаг, присутствовал ли элемент в кэше.
 func (l *lruCache) Set(key Key, value interface{}) bool {
 	l.Lock()
 	defer l.Unlock()
 	if oldItem, ok := l.items[key]; ok {
 		// если элемент присутствует в словаре, то обновить его значение и переместить элемент в начало очереди
-		oldItem.Value = value
+		oldItem.Value.(*CacheItem).cacheValue = value
 		l.queue.MoveToFront(oldItem)
 		return true
 	}
@@ -36,14 +41,12 @@ func (l *lruCache) Set(key Key, value interface{}) bool {
 		backItem := l.queue.Back()
 		l.queue.Remove(backItem)
 
-		for keyToDel, valueToDel := range l.items {
-			if valueToDel == backItem {
-				delete(l.items, keyToDel)
-			}
-		}
+		keyToDel := backItem.Value.(*CacheItem).key
+		delete(l.items, keyToDel)
 	}
 	// Затем: собственно добавление в словарь и в начало очереди.
-	l.items[key] = l.queue.PushFront(value)
+	// Элемент кэша хранит в себе ключ, по которому он лежит в словаре, и само значение.
+	l.items[key] = l.queue.PushFront(&CacheItem{value, key})
 
 	return false
 }
@@ -54,7 +57,7 @@ func (l *lruCache) Get(key Key) (interface{}, bool) {
 	if foundItem, ok := l.items[key]; ok {
 		// если элемент присутствует в словаре, то переместить элемент в начало очереди и вернуть его значение и true
 		l.queue.MoveToFront(foundItem)
-		return foundItem.Value, true
+		return foundItem.Value.(*CacheItem).cacheValue, true
 	}
 	// если элемента нет в словаре, то вернуть nil и false (работа с кешом похожа на работу с map)
 
