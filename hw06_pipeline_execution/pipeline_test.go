@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 )
 
@@ -117,7 +118,6 @@ func TestPipeline(t *testing.T) {
 		require.Equal(t, result, data)
 		require.Less(t, int64(elapsed), int64(abortDur)+int64(fault))
 	})
-
 }
 
 func TestAllStageStop(t *testing.T) {
@@ -175,6 +175,5 @@ func TestAllStageStop(t *testing.T) {
 		wg.Wait()
 
 		require.Len(t, result, 0)
-
 	})
 }
