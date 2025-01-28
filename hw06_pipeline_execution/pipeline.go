@@ -23,9 +23,11 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 					select {
 					case out <- v:
 					case <-done:
+						finishChannel(input)
 						return
 					}
 				case <-done:
+					finishChannel(input)
 					return
 				}
 			}
@@ -40,4 +42,11 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 	}
 
 	return out
+}
+
+func finishChannel(input In) {
+	for range input {
+		// Дочитываем до конца канал input
+		continue
+	}
 }
