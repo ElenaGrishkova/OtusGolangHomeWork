@@ -17,10 +17,6 @@ var (
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
-	if fromPath == toPath {
-		return ErrDuplicateToPath
-	}
-
 	fromFile, err := os.Open(fromPath)
 	if err != nil {
 		return err
@@ -45,11 +41,23 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	println("offset = ", offset)
 	println("limit = ", limit)
 
-	toFile, err := os.Create(toPath)
+	// Открываем/создаем файл назначения без режима Truncate
+	toFile, err := os.OpenFile(toPath, os.O_RDWR|os.O_CREATE, 0o666)
 	if err != nil {
 		return err
 	}
 	defer closeFile(toFile)
+
+	// Проверяем, что файл источника и приемника - различные файлы
+	toInfo, err := toFile.Stat()
+	if err == nil && os.SameFile(fromInfo, toInfo) {
+		return ErrDuplicateToPath
+	}
+	// После проверки, что файл-приемник подходит - очищаем его
+	err = toFile.Truncate(0)
+	if err != nil {
+		return err
+	}
 
 	// set the offset
 	_, err = fromFile.Seek(offset, io.SeekStart)
