@@ -22,6 +22,9 @@ func TestCopy(t *testing.T) {
 	t.Run("offset exceeds file size ", func(t *testing.T) {
 		require.Equal(t, ErrOffsetExceedsFileSize, Copy(inputFilePath, "", 10000, 0))
 	})
+	t.Run("output path duplicates input path", func(t *testing.T) {
+		require.Equal(t, ErrDuplicateToPath, Copy(inputFilePath, inputFilePath, 0, 0))
+	})
 	t.Run("empty path output", func(t *testing.T) {
 		require.NotNil(t, Copy(inputFilePath, "", 0, 0))
 	})

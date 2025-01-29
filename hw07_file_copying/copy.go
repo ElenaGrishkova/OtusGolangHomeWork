@@ -11,11 +11,16 @@ import (
 )
 
 var (
+	ErrDuplicateToPath       = errors.New("output path duplicates input path")
 	ErrUnsupportedFile       = errors.New("unsupported file")
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
+	if fromPath == toPath {
+		return ErrDuplicateToPath
+	}
+
 	fromFile, err := os.Open(fromPath)
 	if err != nil {
 		return err
@@ -23,7 +28,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	defer closeFile(fromFile)
 
 	fromInfo, err := fromFile.Stat()
-	if err != nil {
+	if err != nil || !fromInfo.Mode().IsRegular() {
 		return ErrUnsupportedFile
 	}
 
