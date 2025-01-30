@@ -19,7 +19,7 @@ func TestRunCmd(t *testing.T) {
 		env := Environment{}
 		env["BAR"] = EnvValue{"bar", false}
 		env["UNSET"] = EnvValue{"", true}
-		exitcode = RunCmd([]string{"/bin/bash", "testdata/customCmd.sh", "arg1=5", "arg2=2"}, env)
+		exitcode = RunCmd([]string{"/bin/bash", "testdata/customCmd.sh", "5", "2"}, env)
 		require.Equal(t, 5, exitcode)
 	})
 }
