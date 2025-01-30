@@ -3,38 +3,23 @@ package main
 import (
 	"os"
 	"os/exec"
-	"strings"
 )
 
 // RunCmd runs a command + arguments (cmd) with environment variables from env.
 func RunCmd(cmd []string, env Environment) (returnCode int) {
-	envOS := os.Environ() // слайс строк "key=value"
-
-	cmdEnv := make([]string, 0)
-	cmdEnv = append(cmdEnv, cmd[1:]...)
-
-	// Собираем переменные из ОС, при необходимости затирая или замещая их из env
-	for _, param := range envOS {
-		keyOS := strings.Split(param, "=")[0]
-		envValue, ok := env[keyOS]
-		if ok {
-			if !envValue.NeedRemove {
-				cmdEnv = append(cmdEnv, strings.Join([]string{keyOS, envValue.Value}, "="))
-				delete(env, keyOS)
-			}
-		} else {
-			cmdEnv = append(cmdEnv, param)
-		}
-	}
-	// Добавляем переменные из env, которых не было в ОС
 	for keyEnv, envValue := range env {
-		if !envValue.NeedRemove {
-			cmdEnv = append(cmdEnv, strings.Join([]string{keyEnv, envValue.Value}, "="))
+		if envValue.NeedRemove {
+			os.Unsetenv(keyEnv)
+		} else {
+			if _, ok := os.LookupEnv(keyEnv); ok {
+				os.Unsetenv(keyEnv)
+			}
+			os.Setenv(keyEnv, envValue.Value)
 		}
 	}
 
 	//nolint:gosec
-	command := exec.Command(cmd[0], cmdEnv...)
+	command := exec.Command(cmd[0], cmd[1:]...)
 
 	command.Stdin = os.Stdin
 	command.Stdout = os.Stdout
