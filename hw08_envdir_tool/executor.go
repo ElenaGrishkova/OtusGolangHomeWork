@@ -11,6 +11,9 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 	envOS := os.Environ() // слайс строк "key=value"
 
 	cmdEnv := make([]string, 0)
+	cmdEnv = append(cmdEnv, cmd[1:]...)
+
+	// Собираем переменные из ОС, при необходимости затирая или замещая их из env
 	for _, param := range envOS {
 		keyOS := strings.Split(param, "=")[0]
 		envValue, ok := env[keyOS]
@@ -23,12 +26,12 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 			cmdEnv = append(cmdEnv, param)
 		}
 	}
+	// Добавляем переменные из env, которых не было в ОС
 	for keyEnv, envValue := range env {
 		if !envValue.NeedRemove {
 			cmdEnv = append(cmdEnv, strings.Join([]string{keyEnv, envValue.Value}, "="))
 		}
 	}
-	cmdEnv = append(cmdEnv, cmd[1:]...)
 
 	//nolint:gosec
 	command := exec.Command(cmd[0], cmdEnv...)
