@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"unicode"
 )
 
 type Environment map[string]EnvValue
@@ -50,7 +49,9 @@ func ReadDir(dir string) (Environment, error) {
 		if scanner.Scan() {
 			envVal.Value = strings.ReplaceAll(
 				strings.TrimRightFunc(
-					scanner.Text(), unicode.IsSpace),
+					scanner.Text(), func(r rune) bool {
+						return r == ' ' || r == '\t'
+					}),
 				"\x00", "\n")
 		} else {
 			envVal.NeedRemove = true
