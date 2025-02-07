@@ -11,6 +11,12 @@ import (
 	"time"
 )
 
+var timeout time.Duration
+
+func init() {
+	flag.DurationVar(&timeout, "timeout", 10*time.Second, "connection timeout")
+}
+
 func main() {
 	flag.Parse()
 	if flag.NArg() < 2 {
@@ -21,9 +27,6 @@ func main() {
 	host := flag.Arg(0)
 	port := flag.Arg(1)
 	address := net.JoinHostPort(host, port)
-
-	var timeout time.Duration
-	flag.DurationVar(&timeout, "timeout", 10*time.Second, "connection timeout")
 
 	// Реакция на внешнее прерывание утилиты
 	externalClose := make(chan os.Signal, 1)
