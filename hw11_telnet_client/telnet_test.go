@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 )
 
@@ -62,4 +63,15 @@ func TestTelnetClient(t *testing.T) {
 
 		wg.Wait()
 	})
+}
+
+func TestTelnetClientTimeout(t *testing.T) {
+	in := &bytes.Buffer{}
+	out := &bytes.Buffer{}
+	timeout := 10 * time.Millisecond
+
+	unavailableAddr := "10.255.255.1:8080"
+
+	client := NewTelnetClient(unavailableAddr, timeout, io.NopCloser(in), out)
+	require.Error(t, client.Connect())
 }
