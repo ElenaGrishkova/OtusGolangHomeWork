@@ -9,44 +9,32 @@ type (
 type Stage func(in In) (out Out)
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
+	// Последовательно оборачиваем входной канал через все стадии, и получаем последний выходной канал
+	resultOutput := in
+	for _, stage := range stages {
+		resultOutput = stage(resultOutput)
+	}
+
 	// Обертка канала, чтобы завершать его по сигналу done
-	orDone := func(input In, done In) In {
-		out := make(Bi)
-		go func() {
-			defer close(out)
-			for {
-				select {
-				case v, ok := <-input:
-					if !ok {
-						return
-					}
-					select {
-					case out <- v:
-					case <-done:
-						finishChannel(input)
-						return
-					}
-				case <-done:
-					finishChannel(input)
+	out := make(Bi)
+	go func() {
+		defer close(out)
+		for {
+			select {
+			case v, ok := <-resultOutput:
+				if !ok {
 					return
 				}
+				select {
+				case out <- v:
+				case <-done:
+					return
+				}
+			case <-done:
+				return
 			}
-		}()
-		return out
-	}
-
-	// Последовательно оборачиваем входной канал через все стадии
-	out := in
-	for _, stage := range stages {
-		out = stage(orDone(out, done))
-	}
+		}
+	}()
 
 	return out
-}
-
-func finishChannel(input In) {
-	for range input {
-		// Дочитываем до конца канал input
-		continue
-	}
 }
