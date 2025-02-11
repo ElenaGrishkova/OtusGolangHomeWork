@@ -12,7 +12,7 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 	// Последовательно оборачиваем входной канал через все стадии, и получаем последний выходной канал
 	resultOutput := in
 	// Здесь содержатся все промежуточные выходные каналы
-	var middleOutputs []Out
+	middleOutputs := make([]Out, 0)
 	middleOutputs = append(middleOutputs, resultOutput)
 	for _, stage := range stages {
 		resultOutput = stage(resultOutput)
@@ -52,14 +52,8 @@ func finishChannelSlice(middleOutputs []Out) {
 }
 
 func finishChannel(output Out) {
-	j := 0
-	for {
-		select {
-		case _, ok := <-output:
-			j = j + 1
-			if !ok {
-				return
-			}
-		}
+	for range output {
+		// Дочитываем до конца канал output
+		continue
 	}
 }
