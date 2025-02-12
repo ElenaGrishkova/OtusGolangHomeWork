@@ -2,30 +2,67 @@ package internalhttp
 
 import (
 	"context"
+	"net/http"
+	"time"
 )
 
-type Server struct { // TODO
+type Server struct {
+	server http.Server
+	app    Application
 }
 
-type Logger interface { // TODO
+type StatusRecorder struct {
+	http.ResponseWriter
+	StatusCode int
 }
 
-type Application interface { // TODO
+func (r *StatusRecorder) WriteHeader(status int) {
+	r.StatusCode = status
+	r.ResponseWriter.WriteHeader(status)
 }
 
-func NewServer(logger Logger, app Application) *Server {
-	return &Server{}
+func hello(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+	w.Write([]byte("Hello, World!"))
+}
+
+type Logger interface {
+	Info(msg string)
+	Error(msg string)
+}
+
+type Application interface {
+	CreateEvent(ctx context.Context, id, title string) error
+}
+
+func NewServer(addr string, logger Logger, app Application) *Server {
+	mux := http.NewServeMux()
+
+	helloHandler := http.HandlerFunc(hello)
+	mux.Handle("/", loggingMiddleware(helloHandler, logger))
+
+	return &Server{
+		server: http.Server{
+			Addr:         addr,
+			Handler:      mux,
+			ReadTimeout:  3 * time.Second,
+			WriteTimeout: 3 * time.Second,
+		},
+		app: app,
+	}
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	// TODO
+	if err := s.server.ListenAndServe(); err != nil {
+		return err
+	}
 	<-ctx.Done()
 	return nil
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	// TODO
-	return nil
+	return s.server.Shutdown(ctx)
 }
-
-// TODO

@@ -1,0 +1,12 @@
+{
+  "server": {
+    "port": 2121
+  },
+  "database": {
+    "driver": "postgres",
+    "dsn": "postgres://user:passw0rd@localhost/test?currentSchema=events"
+  },
+  "logger": {
+    "level": "info"
+  }
+}

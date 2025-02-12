@@ -3,21 +3,29 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/app"
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/storage/memory"
+	//nolint:depguard
+	"github.com/ElenaGrishkova/OtusGolangHomeWork/hw12_13_14_15_calendar/internal/app"
+	//nolint:depguard
+	"github.com/ElenaGrishkova/OtusGolangHomeWork/hw12_13_14_15_calendar/internal/logger"
+	//nolint:depguard
+	internalhttp "github.com/ElenaGrishkova/OtusGolangHomeWork/hw12_13_14_15_calendar/internal/server/http"
+	//nolint:depguard
+	memorystorage "github.com/ElenaGrishkova/OtusGolangHomeWork/hw12_13_14_15_calendar/internal/storage/memory"
+	//nolint:depguard
+	sqlstorage "github.com/ElenaGrishkova/OtusGolangHomeWork/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "/etc/calendar/config.json", "Path to configuration file")
 }
 
 func main() {
@@ -28,13 +36,38 @@ func main() {
 		return
 	}
 
+	// Создание конфига
 	config := NewConfig()
-	logg := logger.New(config.Logger.Level)
+	ctxConfig := context.TODO()
+	if err := LoadConfig(ctxConfig, config, configFile); err != nil {
+		log.Fatal(err)
+	}
 
-	storage := memorystorage.New()
+	// Логирование
+	logg, err := logger.New(config.Logger.Level)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// БД
+	var storage app.Storage
+	switch config.Database.Storage {
+	case "in-memory":
+		storage = memorystorage.NewMemoryStorage()
+	case "database":
+		driver := config.Database.Driver
+		dsn := config.Database.Dsn
+		storage = sqlstorage.NewSQLStorage(driver, dsn)
+		if err := storage.Connect(); err != nil {
+			log.Fatal(err)
+		}
+	default:
+		log.Fatal("unknown storage type")
+	}
+
+	// Запуск приложения
 	calendar := app.New(logg, storage)
-
-	server := internalhttp.NewServer(logg, calendar)
+	server := internalhttp.NewServer(net.JoinHostPort(config.Server.Host, config.Server.Port), logg, calendar)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
