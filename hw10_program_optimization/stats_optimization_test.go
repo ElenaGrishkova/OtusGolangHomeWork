@@ -5,9 +5,12 @@ package hw10programoptimization
 
 import (
 	"archive/zip"
+	"bytes"
+	"io"
 	"testing"
 	"time"
 
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,6 +20,21 @@ const (
 
 	timeLimit = 300 * time.Millisecond
 )
+
+func BenchmarkGetDomainStat(b *testing.B) {
+	r, _ := zip.OpenReader("testdata/users.dat.zip")
+	defer r.Close()
+
+	data, _ := r.File[0].Open()
+	content, _ := io.ReadAll(data)
+	reader := bytes.NewReader(content)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		GetDomainStat(reader, "biz")
+	}
+}
 
 // go test -v -count=1 -timeout=30s -tags bench .
 func TestGetDomainStat_Time_And_Memory(t *testing.T) {
